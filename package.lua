@@ -5,6 +5,10 @@ return {
   tags = {'lua', 'lit', 'luvit', 'myanimelist', 'jikan'},
   license = 'MIT',
   homepage = 'https://github.com/JikanLua',
+  dependencies = {
+    'creationix/coro-http',
+	  'luvit/secure-socket',
+  },
   files = {
       '**.lua',
   }

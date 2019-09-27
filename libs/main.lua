@@ -10,14 +10,14 @@
 --[[
     Usage example:
         local JikanLua = Jikan.new()
-        JikanLua:User('yTrev', 'history', 'anime'):thenCall(function(data)
+        JikanLua:User('yTrev', 'history', 'anime'):thenCall(function(data) --> I don't know how to do this without promises. OTL
             p(data)
         end):catch(function(error)
             p(error)
         end)
 ]]--
 
-local http = require('https')
+local http = require('coro-http')
 local promise = require('promise')
 local json_parse = require('json').parse
 local URL = require('URL')
@@ -40,6 +40,7 @@ function Jikan.new()
 end
 
 function Jikan:_formatURL(...)
+    p(self._baseURL)
     return format('%s/%s', self._baseURL, concat({...}, '/'))
 end
 
@@ -62,19 +63,15 @@ function Jikan:_request(url)
     local newPromise = promise.new(function(resolve, reject)
         local chunks = ''
 
-        http.get(url, function(res, a)
-            res:on('data', function(chunk)
-                chunks = chunks .. chunk
-            end)
+        coroutine.wrap(function()
+            local res, body = http.request('GET', url)
 
-            res:on('error', function(...)
-                reject(...)
-            end)
-
-            res:on('end', function()
-                resolve(json_parse(chunks))
-            end)
-        end)
+            if res.code == 200 then
+                resolve(json_parse(body))
+            else
+                reject(res)
+            end
+        end)()
     end)
 
     return newPromise
