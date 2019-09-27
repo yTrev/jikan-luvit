@@ -40,7 +40,6 @@ function Jikan.new()
 end
 
 function Jikan:_formatURL(...)
-    p(self._baseURL)
     return format('%s/%s', self._baseURL, concat({...}, '/'))
 end
 
