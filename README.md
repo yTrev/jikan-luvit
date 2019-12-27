@@ -1,6 +1,6 @@
-# JikanLua
+# jikan-luvit
 
-JikanLua is a wrapper for unofficial MAL API, Jikan.
+jikan-luvit is a wrapper for unofficial MAL API, Jikan.
 
 ## Usage
 
