@@ -1,5 +1,5 @@
 return {
-  name = 'PinguRBLX/jikan-luvit',
+  name = 'yTrev/jikan-luvit',
   version = '1.0a',
   description = 'jikan-luvit is a wrapper for unofficial MAL API, Jikan.',
   tags = {'luvit', 'jikan'},
