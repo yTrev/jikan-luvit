@@ -55,21 +55,6 @@ function Jikan:_makeUrl(path, query)
     return format('%s/%s?%s', self._baseURL, path, query)
 end
 
-function Jikan:_assertParam(expected, value)
-    local type = type(value)
-    if type ~= expected then
-        return false
-    else
-        if type == 'string' and value == '' then
-            return false
-        elseif type == 'number' and value <= 0 then
-            return false
-        end
-    end
-
-    return true
-end
-
 function Jikan:_request(url)
     return coroutine.wrap(function(callback)
         local res, body = http.request('GET', url)
