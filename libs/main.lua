@@ -9,38 +9,50 @@
 
 --[[
     Usage example:
-        local JikanLua = Jikan.new()
-        JikanLua:User('yTrev', 'history', 'anime'):thenCall(function(data) --> I don't know how to do this without promises. OTL
-            p(data)
-        end):catch(function(error)
-            p(error)
+        local JikanLua = require('jikanlua')
+        local user = JikanLua:User('yTrev', 'history', 'anime')
+        user(function(success, data)
+            if success then
+                p(data)
+            else
+                p('Error: ' .. data)
+            end
+        end)
+
+        Or
+
+        JikanLua:User('yTrev', 'history', 'anime')(function(success, data)
+            if success then
+                p(data)
+            else
+                p('Error: ' .. data)
+            end
         end)
 ]]--
 
 local http = require('coro-http')
-local promise = require('promise')
 local json_parse = require('json').parse
-local URL = require('URL')
+local querystring = require('querystring')
 
 -- Constants --
 local format = string.format
 local concat, remove = table.concat, table.remove
+local API_URL = 'https://api.jikan.moe'
+local VERSION = 3
 
-local Jikan = {}
-Jikan.__index = Jikan
-
-function Jikan.new()
-    local self = setmetatable({}, Jikan)
-    self._apiURL = 'https://api.jikan.moe'
-    self._version = 3
-
-    self._baseURL = format('%s/v%i', self._apiURL, self._version)
-
-    return self
-end
+local Jikan = {
+    _baseURL = format('%s/v%i', API_URL, VERSION)
+}
 
 function Jikan:_formatURL(...)
     return format('%s/%s', self._baseURL, concat({...}, '/'))
+end
+
+function Jikan:_makeUrl(path, query)
+    path = (type(path) == 'string' and path or type(path) == 'table' and concat(path, '/'))
+    query = query and querystring.stringify(query) or ''
+
+    return format('%s/%s?%s', self._baseURL, path, query)
 end
 
 function Jikan:_assertParam(expected, value)
@@ -59,21 +71,14 @@ function Jikan:_assertParam(expected, value)
 end
 
 function Jikan:_request(url)
-    local newPromise = promise.new(function(resolve, reject)
-        local chunks = ''
-
-        coroutine.wrap(function()
-            local res, body = http.request('GET', url)
-
-            if res.code == 200 then
-                resolve(json_parse(body))
-            else
-                reject(res)
-            end
-        end)()
+    return coroutine.wrap(function(callback)
+        local res, body = http.request('GET', url)
+        if res.code == 200 then
+            callback(true, json_parse(body))
+        else
+            callback(false, res)
+        end
     end)
-
-    return newPromise
 end
 
 function Jikan:_get(type, ...)
@@ -82,11 +87,18 @@ function Jikan:_get(type, ...)
     return request
 end
 
+function Jikan:Version(version)
+    assert(type(version) == 'number' and version > 0, 'Invalid version.')
+    self._baseURL = format('%s/v%i', API_URL, version)
+end
+
 --[[
     Anime(<id>, (request), (parameter))
         id | integer
         request | string: https://jikan.docs.apiary.io/#reference/0/anime
         parameter | integer
+
+    return coroutine
 
     Ex:
         Anime(20507)
@@ -104,6 +116,8 @@ end
         request | string: https://jikan.docs.apiary.io/#reference/0/manga
         parameter | integer
 
+    return coroutine
+
     Ex:
         Manga(74341)
         Manga(74341, 'characters')
@@ -119,6 +133,8 @@ end
         id      | integer
         request | string
 
+    return coroutine
+
     Ex:
         Person(1, 'pictures')
 ]]--
@@ -131,6 +147,8 @@ end
     Character(<id>, (request))
         id      | integer
         request | string
+
+    return coroutine
 
     Ex:
         Character(84677, 'pictures')
@@ -147,28 +165,29 @@ end
         type | anime, manga, person, character
         params | https://jikan.docs.apiary.io/#reference/0/search
 
+    return coroutine
+
     Ex:
         Search('anime', {q = 'Kimetsu', sort = 'descending', order_by = 'score'})
         Search('manga', {q = 'Naruto'})
 ]]--
-function Jikan:Search(type_, params)
-    assert(type_)
+function Jikan:Search(ty, params)
+    assert(ty)
     assert(type(params) == 'table', format('Expected a table, but got a %s', type(params)))
-    local baseUrl = URL.parse(self:_formatURL('search', type_))
 
     if params.q and not (#params.q >= 3) then
         error('MyAnimeList only processes queries with a minimum of 3 letters.')
     end
 
-    baseUrl:setQuery(params)
-
-    return self:_request(tostring(baseUrl))
+    return self:_request(self:_makeUrl({'search', ty}, params))
 end
 
 --[[
     Season(<year>, <season>)
         year    | integer
         season  | summer, spring, fall, winter
+
+    return coroutine
 
     Ex:
         Season(2019, 'summer')
@@ -180,6 +199,8 @@ end
 
 --[[
     SeasonArchive()
+
+    return coroutine
 ]]--
 function Jikan:SeasonArchive()
     return self:_get('season', 'archive')
@@ -187,6 +208,8 @@ end
 
 --[[
     SeasonLater()
+
+    return coroutine
 ]]--
 function Jikan:SeasonLater()
     return self:_get('season', 'later')
@@ -195,6 +218,8 @@ end
 --[[
     SeasonLater((day))
         day | monday, tuesday, wednesday, thursday, friday, saturday, sunday, other(v3), unknown(v3)
+
+    return coroutine
 ]]--
 function Jikan:Schedule(day)
     return self:_get('schedule', day)
@@ -205,6 +230,8 @@ end
         type    | anime, manga, people(v3+), characters(v3+);
         page    | integer
         subtype | Anime: airing upcoming tv movie ova special \ Manga: manga novels oneshots doujin manhwa manhua \ Both: bypopularity favorite
+
+    return coroutine
 ]]--
 
 function Jikan:Top(type, page, subtype)
@@ -217,6 +244,8 @@ end
         type        | anime, manga;
         genre_id    | integer
         page
+    
+    return coroutine
 ]]--
 function Jikan:Genre(type, genre_id, page)
     assert(type and genre_id)
@@ -227,6 +256,8 @@ end
     Producer(<producer_id>, (page))
         producer_id | integer
         page
+    
+    return coroutine
 ]]--
 function Jikan:Producer(producer_id, page)
     assert(producer_id)
@@ -237,6 +268,8 @@ end
     Magazine(<magazine_id>, (page))
         magazine_id | integer
         page
+    
+    return coroutine
 ]]--
 function Jikan:Magazine(magazine_id, page)
     assert(magazine_id)
@@ -250,36 +283,36 @@ end
         request | string
         data | string/table
 
+    return coroutine
+
     Ex:
         User('yTrev', 'animelist', 'all', {q = 'Kimetsu no Yaiba'})
         User('yTrev', 'animelist', {sort = 'descending', order_by = 'score'})
         User('yTrev', 'profile')
         User('yTrev', 'history', 'anime')
 ]]--
-function Jikan:User(username, request, ...)
-    assert(username and request)
-    local extraInfo = {...}
+function Jikan:User(...)
+    local info = {...}
+    assert(info[1] and info[2])
+
     local data
-    for i = 1, #extraInfo do
-        if type(extraInfo[i]) == 'table' then
-            data = remove(extraInfo, i)
+    table.insert(info, 1, 'user')
+
+    for i = 1, #info do
+        if type(info[i]) == 'table' then
+            data = remove(info, i)
             break
         end
     end
 
-    local baseUrl = URL.parse(self:_formatURL('user', username, request, table.unpack(extraInfo)))
-
-    if data and type(data) == 'table' then
-        baseUrl:setQuery(data)
-    end
-
-    return self:_request(tostring(baseUrl))
+    return self:_request(self:_makeUrl(info, data))
 end
 
 --[[
     Club(<id>)
         id | integer
 
+    return coroutine
     Ex:
         Club(5)
 ]]--
@@ -292,6 +325,8 @@ end
 --[[
     ClubMember(<id>, <page>)
         id  | integer
+
+    return coroutine
 ]]--
 function Jikan:ClubMember(id, page)
     assert(id and page)
@@ -303,6 +338,8 @@ end
         type    |  anime, manga, character, person, search, top, schedule, season
         period  | today weekly monthly
         int     |
+
+    return coroutine
 ]]--
 function Jikan:Meta(type, period, offset)
     return self:_get('meta', 'requests', type, period, offset)
