@@ -1,10 +1,10 @@
 return {
-  name = 'PinguRBLX/JikanLua',
+  name = 'PinguRBLX/jikan-luvit',
   version = '1.0a',
-  description = 'JikanLua is a wrapper for unofficial MAL API, Jikan.',
+  description = 'jikan-luvit is a wrapper for unofficial MAL API, Jikan.',
   tags = {'luvit', 'jikan'},
   license = 'MIT',
-  homepage = 'https://github.com/JikanLua',
+  homepage = 'https://github.com/jikan-luvit',
   dependencies = {
     'creationix/coro-http',
   },

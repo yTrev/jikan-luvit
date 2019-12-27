@@ -1,5 +1,5 @@
 --[[
-    JikanLua
+    jikan-luvit
 
     Jikan: https://jikan.docs.apiary.io/
 
@@ -9,8 +9,8 @@
 
 --[[
     Usage example:
-        local JikanLua = require('jikanlua')
-        local user = JikanLua:User('yTrev', 'history', 'anime')
+        local jikan = require('jikan-luvit')
+        local user = jikan:user('yTrev', 'history', 'anime')
         user(function(success, data)
             if success then
                 p(data)
@@ -19,9 +19,9 @@
             end
         end)
 
-        Or
+    Or
 
-        JikanLua:User('yTrev', 'history', 'anime')(function(success, data)
+        jikan:user('yTrev', 'history', 'anime')(function(success, data)
             if success then
                 p(data)
             else
@@ -87,13 +87,21 @@ function Jikan:_get(type, ...)
     return request
 end
 
-function Jikan:Version(version)
+--[[
+    version(<version>)
+        version | integer
+
+    Ex:
+        version(2)
+]]
+
+function Jikan:version(version)
     assert(type(version) == 'number' and version > 0, 'Invalid version.')
     self._baseURL = format('%s/v%i', API_URL, version)
 end
 
 --[[
-    Anime(<id>, (request), (parameter))
+    anime(<id>, (request), (parameter))
         id | integer
         request | string: https://jikan.docs.apiary.io/#reference/0/anime
         parameter | integer
@@ -101,17 +109,17 @@ end
     return coroutine
 
     Ex:
-        Anime(20507)
-        Anime(20507, 'episodes')
-        Anime(20507, 'reviews', 2)
+        anime(20507)
+        anime(20507, 'episodes')
+        anime(20507, 'reviews', 2)
 ]]--
-function Jikan:Anime(id, request, parameter)
+function Jikan:anime(id, request, parameter)
     assert(type(id) == 'number', format('Expected a number, but got a %s', type(id)))
     return self:_get('anime', id, request, parameter)
 end
 
 --[[
-    Manga(<id>, (request), (parameter))
+    manga(<id>, (request), (parameter))
         id | integer
         request | string: https://jikan.docs.apiary.io/#reference/0/manga
         parameter | integer
@@ -119,59 +127,59 @@ end
     return coroutine
 
     Ex:
-        Manga(74341)
-        Manga(74341, 'characters')
-        Manga(74341, 'reviews', 2)
+        manga(74341)
+        manga(74341, 'characters')
+        manga(74341, 'reviews', 2)
 ]]--
-function Jikan:Manga(id, request, parameter)
+function Jikan:manga(id, request, parameter)
     assert(type(id) == 'number', format('Expected a number, but got a %s', type(id)))
     return self:_get('manga', id, request, parameter)
 end
 
 --[[
-    Person(<id>, (request))
+    person(<id>, (request))
         id      | integer
         request | string
 
     return coroutine
 
     Ex:
-        Person(1, 'pictures')
+        person(1, 'pictures')
 ]]--
-function Jikan:Person(id, request)
+function Jikan:person(id, request)
     assert(type(id) == 'number', format('Expected a number, but got a %s', type(id)))
     return self:_get('person', id, request)
 end
 
 --[[
-    Character(<id>, (request))
+    character(<id>, (request))
         id      | integer
         request | string
 
     return coroutine
 
     Ex:
-        Character(84677, 'pictures')
-        Character(84677)
-        Character(84679)
+        character(84677, 'pictures')
+        character(84677)
+        character(84679)
 ]]--
-function Jikan:Character(id, request)
+function Jikan:character(id, request)
     assert(type(id) == 'number', format('Expected a number, but got a %s', type(id)))
     return self:_get('character', id, request)
 end
 
 --[[
-    Search(<type>, (params))
+    search(<type>, (params))
         type | anime, manga, person, character
         params | https://jikan.docs.apiary.io/#reference/0/search
 
     return coroutine
 
     Ex:
-        Search('anime', {q = 'Kimetsu', sort = 'descending', order_by = 'score'})
-        Search('manga', {q = 'Naruto'})
+        search('anime', {q = 'Kimetsu', sort = 'descending', order_by = 'score'})
+        search('manga', {q = 'Naruto'})
 ]]--
-function Jikan:Search(ty, params)
+function Jikan:search(ty, params)
     assert(ty)
     assert(type(params) == 'table', format('Expected a table, but got a %s', type(params)))
 
@@ -183,50 +191,50 @@ function Jikan:Search(ty, params)
 end
 
 --[[
-    Season(<year>, <season>)
+    season(<year>, <season>)
         year    | integer
         season  | summer, spring, fall, winter
 
     return coroutine
 
     Ex:
-        Season(2019, 'summer')
+        season(2019, 'summer')
 ]]--
-function Jikan:Season(year, season)
+function Jikan:season(year, season)
     assert(year and season, 'Year and season are required!')
     return self:_get('season', year, season)
 end
 
 --[[
-    SeasonArchive()
+    seasonArchive()
 
     return coroutine
 ]]--
-function Jikan:SeasonArchive()
+function Jikan:seasonArchive()
     return self:_get('season', 'archive')
 end
 
 --[[
-    SeasonLater()
+    seasonLater()
 
     return coroutine
 ]]--
-function Jikan:SeasonLater()
+function Jikan:seasonLater()
     return self:_get('season', 'later')
 end
 
 --[[
-    SeasonLater((day))
+    schedule((day))
         day | monday, tuesday, wednesday, thursday, friday, saturday, sunday, other(v3), unknown(v3)
 
     return coroutine
 ]]--
-function Jikan:Schedule(day)
+function Jikan:schedule(day)
     return self:_get('schedule', day)
 end
 
 --[[
-    Top(<type>, (page), (subtype))
+    top(<type>, (page), (subtype))
         type    | anime, manga, people(v3+), characters(v3+);
         page    | integer
         subtype | Anime: airing upcoming tv movie ova special \ Manga: manga novels oneshots doujin manhwa manhua \ Both: bypopularity favorite
@@ -234,50 +242,50 @@ end
     return coroutine
 ]]--
 
-function Jikan:Top(type, page, subtype)
+function Jikan:top(type, page, subtype)
     assert(type)
     return self:_get('top', type, page, subtype)
 end
 
 --[[
-    Genre(<type>, <genre_id>, (page))
+    genre(<type>, <genre_id>, (page))
         type        | anime, manga;
         genre_id    | integer
         page
-    
+
     return coroutine
 ]]--
-function Jikan:Genre(type, genre_id, page)
+function Jikan:genre(type, genre_id, page)
     assert(type and genre_id)
     return self:_get('genre', type, genre_id, page)
 end
 
 --[[
-    Producer(<producer_id>, (page))
+    producer(<producer_id>, (page))
         producer_id | integer
         page
-    
+
     return coroutine
 ]]--
-function Jikan:Producer(producer_id, page)
+function Jikan:producer(producer_id, page)
     assert(producer_id)
     return self:_get('producer', producer_id, page)
 end
 
 --[[
-    Magazine(<magazine_id>, (page))
+    magazine(<magazine_id>, (page))
         magazine_id | integer
         page
-    
+
     return coroutine
 ]]--
-function Jikan:Magazine(magazine_id, page)
+function Jikan:magazine(magazine_id, page)
     assert(magazine_id)
     return self:_get('magazine', magazine_id, page)
 end
 
 --[[
-    User(<username>, <request>, (data))
+    user(<username>, <request>, (data))
 
         username | string
         request | string
@@ -286,12 +294,12 @@ end
     return coroutine
 
     Ex:
-        User('yTrev', 'animelist', 'all', {q = 'Kimetsu no Yaiba'})
-        User('yTrev', 'animelist', {sort = 'descending', order_by = 'score'})
-        User('yTrev', 'profile')
-        User('yTrev', 'history', 'anime')
+        user('yTrev', 'animelist', 'all', {q = 'Kimetsu no Yaiba'})
+        user('yTrev', 'animelist', {sort = 'descending', order_by = 'score'})
+        user('yTrev', 'profile')
+        user('yTrev', 'history', 'anime')
 ]]--
-function Jikan:User(...)
+function Jikan:user(...)
     local info = {...}
     assert(info[1] and info[2])
 
@@ -309,46 +317,46 @@ function Jikan:User(...)
 end
 
 --[[
-    Club(<id>)
+    club(<id>)
         id | integer
 
     return coroutine
     Ex:
-        Club(5)
+        club(5)
 ]]--
-function Jikan:Club(id)
+function Jikan:club(id)
     assert(id)
 
     return self:_get('club', id)
 end
 
 --[[
-    ClubMember(<id>, <page>)
+    clubMember(<id>, <page>)
         id  | integer
 
     return coroutine
 ]]--
-function Jikan:ClubMember(id, page)
+function Jikan:clubMember(id, page)
     assert(id and page)
     return self:_get('club', id, 'members', page)
 end
 
 --[[
-    Meta(<type>, <period>, <offset>)
+    meta(<type>, <period>, <offset>)
         type    |  anime, manga, character, person, search, top, schedule, season
         period  | today weekly monthly
         int     |
 
     return coroutine
 ]]--
-function Jikan:Meta(type, period, offset)
+function Jikan:meta(type, period, offset)
     return self:_get('meta', 'requests', type, period, offset)
 end
 
 --[[
-    Status()
+    status()
 ]]--
-function Jikan:Status()
+function Jikan:status()
     return self:_get('meta', 'status')
 end
 
